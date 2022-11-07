@@ -1,13 +1,13 @@
 package com.example.SpringMVC.Dto;
 
-import com.example.SpringMVC.Entity.Order;
 import lombok.Data;
 
-import java.util.Date;
-import java.util.Set;
+import javax.persistence.Column;
 
 @Data
 public class CustomerDTO {
+    private Long customerId;
+
     private String username;
 
     private String email;
@@ -17,4 +17,7 @@ public class CustomerDTO {
     private String password;
 
     private String role;
+
+    private String cDate;
+
 }

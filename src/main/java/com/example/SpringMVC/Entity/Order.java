@@ -23,9 +23,9 @@ public class Order implements Serializable {
     @Column(name="Total")
     private int total;
 
-    @ManyToOne()
-    @JoinColumn(name="CustomerId")
-    private Customer customer;
+//    @ManyToOne()
+//    @JoinColumn(name="CustomerId")
+//    private Customer customer;
 
     @OneToMany(mappedBy = "order",cascade = CascadeType.ALL)
     private Set<OrderDetail> orderDetails;

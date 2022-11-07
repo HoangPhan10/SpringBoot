@@ -4,10 +4,15 @@ import com.example.SpringMVC.Dto.CustomerDTO;
 import com.example.SpringMVC.Entity.Customer;
 import com.example.SpringMVC.Entity.Order;
 import com.example.SpringMVC.Repository.CustomerRepository;
+import com.example.SpringMVC.Request.CustomerInput;
+import com.example.SpringMVC.Response.ResponseData;
 import com.example.SpringMVC.Service.CustomerService;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
 import javax.transaction.Transactional;
 import java.text.SimpleDateFormat;
@@ -20,6 +25,8 @@ import java.util.Set;
 @Service
 @Transactional
 public class CustomerImplement implements CustomerService {
+    public static final Logger logger = LoggerFactory.getLogger(CustomerDTO.class);
+
     @Autowired
     CustomerRepository customerRepository;
 
@@ -27,44 +34,72 @@ public class CustomerImplement implements CustomerService {
     ModelMapper modelMapper;
 
     @Override
-    public List<Customer> getListCustomer() {
-        List<Customer> customer = new ArrayList<Customer>();
+    public ResponseData getListCustomer() {
+        List<CustomerDTO> customerDTOS = new ArrayList<CustomerDTO>();
         customerRepository.findAll().forEach(cus -> {
             if(!cus.getDeleted()){
-                customer.add(cus);
+                customerDTOS.add(modelMapper.map(cus, CustomerDTO.class));
             }
         });
-        return customer;
+        return new ResponseData("data",200,customerDTOS);
     }
 
     @Override
-    public Customer getCustomer(Long id) {
-        return null;
+    public ResponseData getCustomer(Long id) {
+        Customer customer = customerRepository.findByCustomerId(id);
+        if(customer!=null){
+            CustomerDTO customerDTO = modelMapper.map(customerRepository.findByCustomerId(id),CustomerDTO.class);
+            return new ResponseData("data",200,customerDTO);
+        }
+        return new ResponseData("Error",400,"Not found id = "+id);
     }
 
     @Override
-    public void createCustomer(CustomerDTO customerDTO) {
-        Customer customer = modelMapper.map(customerDTO,Customer.class);
+    public ResponseData createCustomer( CustomerInput customerInput) {
+        Customer customer = modelMapper.map(customerInput,Customer.class);
         Date date = new Date();
-        SimpleDateFormat ft = new SimpleDateFormat("yyyy-mm-dd");
+        SimpleDateFormat ft = new SimpleDateFormat("yyyy-MM-dd");
         customer.setCDate(ft.format(date));
         customer.setDeleted(false);
         customerRepository.save(customer);
+        CustomerDTO customerDTO = modelMapper.map(customer,CustomerDTO.class);
+        return new ResponseData("Insert data success",201,customerDTO);
     }
 
-
     @Override
-    public void updateCustomer(CustomerDTO customerDTO,Long id) {
-        Customer customer = customerRepository.getById(id);
+    public ResponseData updateCustomer(CustomerInput customerInput, Long id) {
+        Customer customer = customerRepository.findByCustomerId(id);
         if(customer!=null){
-            modelMapper.typeMap(CustomerDTO.class,Customer.class).addMappings(mapper->mapper.skip(Customer::setPassword))
-                    .map(customerDTO,customer);
-             customerRepository.save(customer);
+            if(customerInput.getEmail()!=null){
+                customer.setEmail(customerInput.getEmail());
+            }
+            if(customerInput.getPassword()!=null){
+                customer.setPassword(customerInput.getPassword());
+            }
+            if(customerInput.getPhone()!=null){
+                customer.setPhone(customerInput.getPhone());
+            }
+            if (customerInput.getRole()!=null){
+                customer.setRole(customerInput.getRole());
+            }
+            if(customerInput.getUsername()!=null){
+                customer.setUsername(customerInput.getUsername());
+            }
+            customerRepository.save(customer);
+            CustomerDTO customerDTO = modelMapper.map(customer,CustomerDTO.class);
+            return new ResponseData("Update data success",202,customerDTO);
         }
+        return new ResponseData("Error",400,"Not found id = "+id);
     }
 
     @Override
-    public void deleteCustomer(Long id) {
-
+    public ResponseData deleteCustomer(Long id) {
+        Customer customer = customerRepository.findByCustomerId(id);
+        if(customer!=null){
+            customer.setDeleted(true);
+            customerRepository.save(customer);
+            return new ResponseData("Delete data success",202,1);
+        }
+        return new ResponseData("Error",400,"Not found id = "+id);
     }
 }
